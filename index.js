@@ -1,4 +1,5 @@
-const { Telegraf, Telegram } = require("telegraf")
+
+ { Telegraf, Telegram } = require("telegraf")
 const config = require("./config")
 const db = require("./db")
 const fs = require("fs")
