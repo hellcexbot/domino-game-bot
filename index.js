@@ -307,6 +307,63 @@ bot.command("top", (ctx) => {
 	}
 })
 
+bot.command("qlobalreyting", ctx => {
+	const fromId = String(ctx.update.message.from.id)
+	const data = db.read()
+	let top = []
+	iterateObject(data, (chatId, chat, chatIndex) => {
+		iterateObject(chat.members, (memberId, member, memberIndex) => {
+			const existingMember = top.find(topItem => topItem.id === memberId)
+			if (existingMember) {
+				if (member.totalScore > existingMember.score) {
+					existingMember.score = member.totalScore
+				}
+			} else {
+				top.push({
+					id: memberId,
+					firstName: member.firstName,
+					score: member.totalScore,
+				})
+			}
+		})
+	})
+
+	top = top.sort((a, b) => b.score - a.score)
+	const topSlice = top.slice(0, 25)
+	let currentUser
+	if (!topSlice.find(item => item.id === fromId)) {
+		let currentUserIndex
+		const foundUser = top.find((item, index) => {
+			if (item.id === fromId) {
+				currentUserIndex = index
+				return true
+			}
+		})
+		if (foundUser) {
+			currentUser = {...foundUser}
+			currentUser.index = currentUserIndex
+		}
+	}
+
+	if (top.length > 0) {
+		ctx.replyWithMarkdown(
+			trueTrim(`
+			*🌎 Qlobal Oyunçuların Reytingi.:*
+			 ⚡ Creator Russia 🇷🇺
+			 @GuessGameQlobalBot
+			
+			*❄️ Qış Sezonu Başladı. ❄️*
+			${topSlice.map((member, index) => `${["🏆", "🎖", "🏅"][index] || "🔸"} ${index + 1}. ${fromId === member.id ? "Sənin Xal: " : ""}${bold(member.firstName)}: ${numberWithSpaces(member.score)} ${pluralize(member.score, "⚡xal", "⚡xal", "⚡xal")}`).join("\n")}
+			${currentUser ? `...\n🔸 ${currentUser.index + 1}. ${bold(currentUser.firstName)}: ${numberWithSpaces(currentUser.score)} ${pluralize(currentUser.score, "⚡xal", "⚡xal", "⚡xal")}\n` : ""}
+			❤️ Bəzən yeni sərin botların dərc olunduğu müəllif kanalı @CreatoRResmi
+			🔄 /game - Bir daha?
+		`)
+		)
+	} else {
+		ctx.reply("❌ Hazırda sıralama mümkün deyil.")
+	}
+})
+
 bot.on("message", async (ctx) => {
 	let message = ctx.update.message
 	if (message.chat.id < 0) {
